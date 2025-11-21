@@ -2,216 +2,112 @@ using System;
 
 namespace LabWork
 {
-    // =================== БАЗОВИЙ КЛАС: РІВНОСТОРОННІЙ ТРИКУТНИК ===================
-    class EquilateralTriangle
+    // ======================= ІНТЕРФЕЙС =======================
+    public interface IPrintable
     {
-        public double Side;     // довжина сторони
-        public double Angle;    // всі кути рівні = 60°
+        void PrintCoefficients();
+        bool Contains(double x, double y); 
+    }
 
-        public double PerimeterValue;
-        public double Height;
-        public double Area;
+    // =================== АБСТРАКТНИЙ КЛАС ====================
+    public abstract class Conic : IPrintable
+    {
+        public abstract void SetCoefficients();
+        public abstract void PrintCoefficients();
+        public abstract bool Contains(double x, double y);
+    }
 
-        // введення значення сторони
-        public virtual void Init()
+    // ======================== КЛАС ЕЛІПС ======================
+    // Еліпс:  x^2/a^2 + y^2/b^2 = 1
+    public class Ellipse : Conic
+    {
+        private double a, b;
+
+        public override void SetCoefficients()
         {
-            Console.WriteLine("Введіть довжину сторони рівностороннього трикутника:");
-            Side = Convert.ToDouble(Console.ReadLine());
-            Angle = 60;
+            Console.Write("Введіть a: ");
+            a = double.Parse(Console.ReadLine());
+
+            Console.Write("Введіть b: ");
+            b = double.Parse(Console.ReadLine());
         }
 
-        // обчислення інших характеристик
-        public virtual void Calculate()
+        public override void PrintCoefficients()
         {
-            Height = Side * Math.Sqrt(3) / 2;
-            Area = (Side * Side * Math.Sqrt(3)) / 4;
-            PerimeterValue = 3 * Side;
+            Console.WriteLine($"Еліпс: x^2/{a * a} + y^2/{b * b} = 1");
         }
 
-        // виведення результатів
-        public virtual void Show()
+        public override bool Contains(double x, double y)
         {
-            Console.WriteLine("\n=== Рівносторонній трикутник ===");
-            Console.WriteLine($"Сторона a = {Side}");
-            Console.WriteLine($"Кути = {Angle}°");
-            Console.WriteLine($"Висота = {Height:F3}");
-            Console.WriteLine($"Площа = {Area:F3}");
-            Console.WriteLine($"Периметр = {PerimeterValue:F3}\n");
+            double v = (x * x) / (a * a) + (y * y) / (b * b);
+            return Math.Abs(v - 1) < 0.0001 || v < 1; // точка на або в середині еліпса
         }
     }
 
-
-    // =================== ПОХІДНИЙ КЛАС: ДОВІЛЬНИЙ ТРИКУТНИК ===================
-    class Triangle : EquilateralTriangle
+    // =================== КРИВА ДРУГОГО ПОРЯДКУ ==================
+    // a11x² + 2a12xy + a22y² + b1x + b2y + c = 0
+    public class SecondOrderCurve : Conic
     {
-        public double Angle1, Angle2, Angle3;
-        public double SideA, SideB, SideC;
+        private double a11, a12, a22, b1, b2, c;
 
-        // введення значень
-        public override void Init()
+        public override void SetCoefficients()
         {
-            Console.WriteLine("Введіть довжину сторони (Side A):");
-            SideA = Convert.ToDouble(Console.ReadLine());
-
-            Console.WriteLine("Введіть два прилеглі кути (Angle1 та Angle2):");
-            Angle1 = Convert.ToDouble(Console.ReadLine());
-            Angle2 = Convert.ToDouble(Console.ReadLine());
-
-            Angle3 = 180 - Angle1 - Angle2;
+            Console.Write("Введіть a11: ");
+            a11 = double.Parse(Console.ReadLine());
+            Console.Write("Введіть a12: ");
+            a12 = double.Parse(Console.ReadLine());
+            Console.Write("Введіть a22: ");
+            a22 = double.Parse(Console.ReadLine());
+            Console.Write("Введіть b1: ");
+            b1 = double.Parse(Console.ReadLine());
+            Console.Write("Введіть b2: ");
+            b2 = double.Parse(Console.ReadLine());
+            Console.Write("Введіть c: ");
+            c = double.Parse(Console.ReadLine());
         }
 
-        // обчислення інших сторін за теоремою синусів
-        public override void Calculate()
+        public override void PrintCoefficients()
         {
-            // за теоремою синусів
-            double rad = Math.PI / 180.0;
-
-            SideB = SideA * Math.Sin(Angle2 * rad) / Math.Sin(Angle3 * rad);
-            SideC = SideA * Math.Sin(Angle1 * rad) / Math.Sin(Angle3 * rad);
-
-            PerimeterValue = SideA + SideB + SideC;
+            Console.WriteLine($"Крива другого порядку:");
+            Console.WriteLine($"{a11}x² + 2*{a12}xy + {a22}y² + {b1}x + {b2}y + {c} = 0");
         }
 
-        public override void Show()
+        public override bool Contains(double x, double y)
         {
-            Console.WriteLine("\n=== Довільний трикутник ===");
-            Console.WriteLine($"Сторона A = {SideA:F3}");
-            Console.WriteLine($"Сторона B = {SideB:F3}");
-            Console.WriteLine($"Сторона C = {SideC:F3}");
-            Console.WriteLine($"Кут A = {Angle1}°");
-            Console.WriteLine($"Кут B = {Angle2}°");
-            Console.WriteLine($"Кут C = {Angle3}°");
-            Console.WriteLine($"Периметр = {PerimeterValue:F3}\n");
+            double v = a11 * x * x + 2 * a12 * x * y + a22 * y * y + b1 * x + b2 * y + c;
+            return Math.Abs(v) < 0.0001;
         }
     }
 
-
-    // ================================ ПРОГРАМА ===================================
-    class Program
-    {
-        public double Side;   // відома сторона
-        public double Angle;  // усі кути по 60°
-        public double Height;
-        public double Area;
-        public double PerimeterValue;
-
-        // введення значення сторони та кута
-        public virtual void Init()
-        {
-            Console.WriteLine("Введіть довжину сторони рівностороннього трикутника:");
-            Side = Convert.ToDouble(Console.ReadLine());
-            Angle = 60;
-        }
-
-        // обчислення інших характеристик
-        public virtual void Calculate()
-        {
-            Height = Side * Math.Sqrt(3) / 2;
-            Area = (Side * Side * Math.Sqrt(3)) / 4;
-            PerimeterValue = 3 * Side;
-        }
-
-        // виведення результатів
-        public virtual void Show()
-        {
-            Console.WriteLine("\n=== Рівносторонній трикутник ===");
-            Console.WriteLine($"Сторона a = {Side}");
-            Console.WriteLine($"Кути = {Angle}°");
-            Console.WriteLine($"Висота = {Height:F2}");
-            Console.WriteLine($"Площа = {Area:F2}");
-            Console.WriteLine($"Периметр = {PerimeterValue:F2}");
-        }
-    }
-
-    // =================== ПОХІДНИЙ КЛАС: ТРИКУТНИК ===================
-    class Triangle : EquilateralTriangle
-    {
-        public double Angle1, Angle2, Angle3;
-        public double SideA, SideB, SideC;
-
-        // введення значення сторони і двох кутів
-        public override void Init()
-        {
-            Console.WriteLine("Введіть довжину відомої сторони A:");
-            SideA = Convert.ToDouble(Console.ReadLine());
-
-            Console.WriteLine("Введіть кут при стороні A (Angle1):");
-            Angle1 = Convert.ToDouble(Console.ReadLine());
-
-            Console.WriteLine("Введіть другий прилеглий кут (Angle2):");
-            Angle2 = Convert.ToDouble(Console.ReadLine());
-
-            Angle3 = 180 - Angle1 - Angle2;
-        }
-
-        // обчислення інших сторін
-        public override void Calculate()
-        {
-            int userSelect;
-
-            do
-            {
-                Console.WriteLine("Виберіть тип фігури:");
-                Console.WriteLine("0 — Рівносторонній трикутник");
-                Console.WriteLine("1 — Трикутник (1 сторона + 2 кути)");
-                Console.WriteLine("Інше — Вихід");
-
-                userSelect = Convert.ToInt32(Console.ReadLine());
-                EquilateralTriangle triangle;
-
-                if (userSelect == 0)
-                {
-                    triangle = new EquilateralTriangle();
-                }
-                else if (userSelect == 1)
-                {
-                    triangle = new Triangle();
-                }
-                else
-                {
-                    return;
-                }
-
-                triangle.Init();
-                triangle.Calculate();
-                triangle.Show();
-
-            } while (true);
-        }
-    }
-
-    // ============================= ПРОГРАМА =============================
+    // ============================ MAIN =============================
     class Program
     {
         static void Main(string[] args)
         {
-            int userSelect;
-            EquilateralTriangle tri;
+            Console.WriteLine("Створення еліпса:");
+            Ellipse ellipse = new Ellipse();
+            ellipse.SetCoefficients();
+            ellipse.PrintCoefficients();
 
-            do
-            {
-                Console.WriteLine("\nВиберіть фігуру:");
-                Console.WriteLine("0 — Рівносторонній трикутник");
-                Console.WriteLine("1 — Довільний трикутник");
-                Console.WriteLine("Інше — Вихід");
+            Console.Write("Введіть точку X: ");
+            double x = double.Parse(Console.ReadLine());
+            Console.Write("Введіть точку Y: ");
+            double y = double.Parse(Console.ReadLine());
 
-                userSelect = Convert.ToInt32(Console.ReadLine());
+            if (ellipse.Contains(x, y))
+                Console.WriteLine("Точка належить еліпсу.");
+            else
+                Console.WriteLine("Точка НЕ належить еліпсу.");
 
-                if (userSelect == 0)
-                {
-                    tri = new EquilateralTriangle();
-                }
-                else if (userSelect == 1)
-                {
-                    tri = new Triangle();
-                }
-                else
-                {
-                    return;
-                }
+            Console.WriteLine("\nСтворення кривої другого порядку:");
+            SecondOrderCurve curve = new SecondOrderCurve();
+            curve.SetCoefficients();
+            curve.PrintCoefficients();
 
-                tri.Init();
-                tri.Calculate();
-                tri.Show();
-
-            } while (true);
+            if (curve.Contains(x, y))
+                Console.WriteLine("Точка належить кривій другого порядку.");
+            else
+                Console.WriteLine("Точка НЕ належить цій кривій.");
+        }
+    }
+}
