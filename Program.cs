@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 
 namespace LabWork
 {
@@ -6,7 +7,7 @@ namespace LabWork
     public interface IPrintable
     {
         void PrintCoefficients();
-        bool Contains(double x, double y); 
+        bool Contains(double x, double y);
     }
 
     // =================== АБСТРАКТНИЙ КЛАС ====================
@@ -18,64 +19,107 @@ namespace LabWork
     }
 
     // ======================== КЛАС ЕЛІПС ======================
-    // Еліпс:  x^2/a^2 + y^2/b^2 = 1
     public class Ellipse : Conic
     {
-        private double a, b;
+        private double _a, _b;
+
+        public Ellipse() { }
+
+        public Ellipse(double a, double b)
+        {
+            _a = a;
+            _b = b;
+        }
 
         public override void SetCoefficients()
         {
-            Console.Write("Введіть a: ");
-            a = double.Parse(Console.ReadLine());
-
-            Console.Write("Введіть b: ");
-            b = double.Parse(Console.ReadLine());
+            _a = ReadDouble("Введіть a: ");
+            _b = ReadDouble("Введіть b: ");
         }
 
         public override void PrintCoefficients()
         {
-            Console.WriteLine($"Еліпс: x^2/{a * a} + y^2/{b * b} = 1");
+            Console.WriteLine($"Еліпс: x²/{_a}² + y²/{_b}² = 1");
         }
 
         public override bool Contains(double x, double y)
         {
-            double v = (x * x) / (a * a) + (y * y) / (b * b);
-            return Math.Abs(v - 1) < 0.0001 || v < 1; // точка на або в середині еліпса
+            double v = (x * x) / (_a * _a) + (y * y) / (_b * _b);
+            return Math.Abs(v - 1) < 0.0001 || v < 1;
+        }
+
+        private double ReadDouble(string message)
+        {
+            double value;
+            Console.Write(message);
+            while (!double.TryParse(Console.ReadLine(), NumberStyles.Float, CultureInfo.InvariantCulture, out value))
+            {
+                Console.Write("Невірне значення. Спробуйте ще раз: ");
+            }
+            return value;
         }
     }
 
     // =================== КРИВА ДРУГОГО ПОРЯДКУ ==================
-    // a11x² + 2a12xy + a22y² + b1x + b2y + c = 0
     public class SecondOrderCurve : Conic
     {
-        private double a11, a12, a22, b1, b2, c;
+        private double _a11, _a12, _a22, _b1, _b2, _c;
 
+        public SecondOrderCurve() { }
+
+        public SecondOrderCurve(double a11, double a12, double a22, double b1, double b2, double c)
+        {
+            _a11 = a11;
+            _a12 = a12;
+            _a22 = a22;
+            _b1 = b1;
+            _b2 = b2;
+            _c = c;
+        }
+
+        // Основний метод SetCoefficients
         public override void SetCoefficients()
         {
-            Console.Write("Введіть a11: ");
-            a11 = double.Parse(Console.ReadLine());
-            Console.Write("Введіть a12: ");
-            a12 = double.Parse(Console.ReadLine());
-            Console.Write("Введіть a22: ");
-            a22 = double.Parse(Console.ReadLine());
-            Console.Write("Введіть b1: ");
-            b1 = double.Parse(Console.ReadLine());
-            Console.Write("Введіть b2: ");
-            b2 = double.Parse(Console.ReadLine());
-            Console.Write("Введіть c: ");
-            c = double.Parse(Console.ReadLine());
+            _a11 = ReadDouble("Введіть a11: ");
+            _a12 = ReadDouble("Введіть a12: ");
+            _a22 = ReadDouble("Введіть a22: ");
+            _b1 = ReadDouble("Введіть b1: ");
+            _b2 = ReadDouble("Введіть b2: ");
+            _c = ReadDouble("Введіть c: ");
+        }
+
+        // Перевантажений метод
+        public void SetCoefficients(double a11, double a12, double a22, double b1, double b2, double c)
+        {
+            _a11 = a11;
+            _a12 = a12;
+            _a22 = a22;
+            _b1 = b1;
+            _b2 = b2;
+            _c = c;
         }
 
         public override void PrintCoefficients()
         {
-            Console.WriteLine($"Крива другого порядку:");
-            Console.WriteLine($"{a11}x² + 2*{a12}xy + {a22}y² + {b1}x + {b2}y + {c} = 0");
+            Console.WriteLine("Крива другого порядку:");
+            Console.WriteLine($"{_a11}x² + 2*{_a12}xy + {_a22}y² + {_b1}x + {_b2}y + {_c} = 0");
         }
 
         public override bool Contains(double x, double y)
         {
-            double v = a11 * x * x + 2 * a12 * x * y + a22 * y * y + b1 * x + b2 * y + c;
+            double v = _a11 * x * x + 2 * _a12 * x * y + _a22 * y * y + _b1 * x + _b2 * y + _c;
             return Math.Abs(v) < 0.0001;
+        }
+
+        private double ReadDouble(string message)
+        {
+            double value;
+            Console.Write(message);
+            while (!double.TryParse(Console.ReadLine(), NumberStyles.Float, CultureInfo.InvariantCulture, out value))
+            {
+                Console.Write("Невірне значення. Спробуйте ще раз: ");
+            }
+            return value;
         }
     }
 
@@ -84,30 +128,49 @@ namespace LabWork
     {
         static void Main(string[] args)
         {
+            Conic[] conics = new Conic[2];
+
             Console.WriteLine("Створення еліпса:");
-            Ellipse ellipse = new Ellipse();
-            ellipse.SetCoefficients();
-            ellipse.PrintCoefficients();
+            conics[0] = new Ellipse();
+            conics[0].SetCoefficients();
+            conics[0].PrintCoefficients();
 
             Console.Write("Введіть точку X: ");
-            double x = double.Parse(Console.ReadLine());
+            double x = ReadDouble();
             Console.Write("Введіть точку Y: ");
-            double y = double.Parse(Console.ReadLine());
+            double y = ReadDouble();
 
-            if (ellipse.Contains(x, y))
+            if (conics[0].Contains(x, y))
                 Console.WriteLine("Точка належить еліпсу.");
             else
                 Console.WriteLine("Точка НЕ належить еліпсу.");
 
             Console.WriteLine("\nСтворення кривої другого порядку:");
-            SecondOrderCurve curve = new SecondOrderCurve();
-            curve.SetCoefficients();
-            curve.PrintCoefficients();
+            conics[1] = new SecondOrderCurve();
+            conics[1].SetCoefficients();
+            conics[1].PrintCoefficients();
 
-            if (curve.Contains(x, y))
+            if (conics[1].Contains(x, y))
                 Console.WriteLine("Точка належить кривій другого порядку.");
             else
                 Console.WriteLine("Точка НЕ належить цій кривій.");
+
+            // Демонстрація поліморфізму через масив Conic[]
+            Console.WriteLine("\nДемонстрація поліморфізму:");
+            foreach (var c in conics)
+            {
+                c.PrintCoefficients();
+            }
+        }
+
+        private static double ReadDouble()
+        {
+            double value;
+            while (!double.TryParse(Console.ReadLine(), NumberStyles.Float, CultureInfo.InvariantCulture, out value))
+            {
+                Console.Write("Невірне значення. Спробуйте ще раз: ");
+            }
+            return value;
         }
     }
 }
