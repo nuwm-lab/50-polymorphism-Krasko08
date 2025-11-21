@@ -2,125 +2,204 @@ using System;
 
 namespace LabWork
 {
-    // =================== БАЗОВИЙ КЛАС: РІВНОСТОРОННІЙ ТРИКУТНИК ===================
-    class EquilateralTriangle
+    // Вхідна допоміжна логіка вводу
+    static class InputHelper
     {
-        public double Side;     // довжина сторони
-        public double Angle;    // всі кути рівні = 60°
-
-        public double PerimeterValue;
-        public double Height;
-        public double Area;
-
-        // введення значення сторони
-        public virtual void Init()
+        public static double ReadDouble(string prompt, Func<double, bool> validator = null)
         {
-            Console.WriteLine("Введіть довжину сторони рівностороннього трикутника:");
-            Side = Convert.ToDouble(Console.ReadLine());
-            Angle = 60;
+            double value;
+            while (true)
+            {
+                Console.WriteLine(prompt);
+                var s = Console.ReadLine();
+                if (double.TryParse(s, out value))
+                {
+                    if (validator == null || validator(value))
+                        return value;
+                    Console.WriteLine("Значення не пройшло перевірку. Спробуйте ще раз.");
+                }
+                else
+                {
+                    Console.WriteLine("Невірний ввід. Введіть число (наприклад 3.5).");
+                }
+            }
         }
 
-        // обчислення інших характеристик
-        public virtual void Calculate()
+        public static int ReadInt(string prompt)
         {
-            Height = Side * Math.Sqrt(3) / 2;
-            Area = (Side * Side * Math.Sqrt(3)) / 4;
-            PerimeterValue = 3 * Side;
-        }
-
-        // виведення результатів
-        public virtual void Show()
-        {
-            Console.WriteLine("\n=== Рівносторонній трикутник ===");
-            Console.WriteLine($"Сторона a = {Side}");
-            Console.WriteLine($"Кути = {Angle}°");
-            Console.WriteLine($"Висота = {Height:F3}");
-            Console.WriteLine($"Площа = {Area:F3}");
-            Console.WriteLine($"Периметр = {PerimeterValue:F3}\n");
+            int v;
+            while (true)
+            {
+                Console.WriteLine(prompt);
+                var s = Console.ReadLine();
+                if (int.TryParse(s, out v)) return v;
+                Console.WriteLine("Невірний ввід. Спробуйте ще раз.");
+            }
         }
     }
 
-
-    // =================== ПОХІДНИЙ КЛАС: ДОВІЛЬНИЙ ТРИКУТНИК ===================
-    class Triangle : EquilateralTriangle
+    // Абстрактний базовий клас для кривих другого порядку / коників
+    abstract class Conic
     {
-        public double Angle1, Angle2, Angle3;
-        public double SideA, SideB, SideC;
+        protected const double Epsilon = 1e-9;
 
-        // введення значень
-        public override void Init()
+        // Встановити коефіцієнти через вхід (розділення IO від математичної логіки частково забезпечено)
+        public abstract void SetCoefficientsFromInput();
+
+        // Показати коефіцієнти та основні характеристики
+        public abstract void Show();
+
+        // Перевіряє, чи належить точка кривій (в межах Epsilon)
+        public abstract bool ContainsPoint(double x, double y);
+    }
+
+    // Еліпс у канонічній позиції: x^2/a^2 + y^2/b^2 = 1
+    class Ellipse : Conic
+    {
+        public double A { get; private set; }
+        public double B { get; private set; }
+
+        public Ellipse() { }
+
+        public Ellipse(double a, double b)
         {
-            Console.WriteLine("Введіть довжину сторони (Side A):");
-            SideA = Convert.ToDouble(Console.ReadLine());
-
-            Console.WriteLine("Введіть два прилеглі кути (Angle1 та Angle2):");
-            Angle1 = Convert.ToDouble(Console.ReadLine());
-            Angle2 = Convert.ToDouble(Console.ReadLine());
-
-            Angle3 = 180 - Angle1 - Angle2;
+            SetParameters(a, b);
         }
 
-        // обчислення інших сторін за теоремою синусів
-        public override void Calculate()
+        public void SetParameters(double a, double b)
         {
-            // за теоремою синусів
-            double rad = Math.PI / 180.0;
+            if (a <= 0 || b <= 0)
+                throw new ArgumentException("Параметри еліпсу повинні бути додатними (a>0, b>0).");
+            A = a;
+            B = b;
+        }
 
-            SideB = SideA * Math.Sin(Angle2 * rad) / Math.Sin(Angle3 * rad);
-            SideC = SideA * Math.Sin(Angle1 * rad) / Math.Sin(Angle3 * rad);
-
-            PerimeterValue = SideA + SideB + SideC;
+        public override void SetCoefficientsFromInput()
+        {
+            double a = InputHelper.ReadDouble("Введіть a (велика піввісь > 0):", v => v > 0);
+            double b = InputHelper.ReadDouble("Введіть b (мала піввісь > 0):", v => v > 0);
+            SetParameters(a, b);
         }
 
         public override void Show()
         {
-            Console.WriteLine("\n=== Довільний трикутник ===");
-            Console.WriteLine($"Сторона A = {SideA:F3}");
-            Console.WriteLine($"Сторона B = {SideB:F3}");
-            Console.WriteLine($"Сторона C = {SideC:F3}");
-            Console.WriteLine($"Кут A = {Angle1}°");
-            Console.WriteLine($"Кут B = {Angle2}°");
-            Console.WriteLine($"Кут C = {Angle3}°");
-            Console.WriteLine($"Периметр = {PerimeterValue:F3}\n");
+            Console.WriteLine("\n--- Еліпс (канонічна форма) ---");
+            Console.WriteLine($"a = {A}");
+            Console.WriteLine($"b = {B}");
+            Console.WriteLine($"Рівняння: x^2/{A}^2 + y^2/{B}^2 = 1 (в канонічній позиції)");
+            Console.WriteLine($"Приблизний периметр (рамануджан) = {PerimeterApprox():F6}");
+        }
+
+        // Перевіряємо приналежність точки до еліпса
+        public override bool ContainsPoint(double x, double y)
+        {
+            if (A == 0 || B == 0) return false;
+            double val = (x * x) / (A * A) + (y * y) / (B * B) - 1.0;
+            return Math.Abs(val) <= Epsilon;
+        }
+
+        // Приблизна довжина кола еліпса — формула Ramanujan (перша апрокс.)
+        public double PerimeterApprox()
+        {
+            double a = A, b = B;
+            return Math.PI * (3 * (a + b) - Math.Sqrt((3 * a + b) * (a + 3 * b)));
         }
     }
 
+    // Загальна крива другого порядку: a11 x^2 + 2 a12 x y + a22 y^2 + b1 x + b2 y + c = 0
+    class GeneralConic : Conic
+    {
+        public double A11 { get; private set; }
+        public double A12 { get; private set; }
+        public double A22 { get; private set; }
+        public double B1 { get; private set; }
+        public double B2 { get; private set; }
+        public double C { get; private set; }
 
-    // ================================ ПРОГРАМА ===================================
+        public GeneralConic() { }
+
+        public GeneralConic(double a11, double a12, double a22, double b1, double b2, double c)
+        {
+            A11 = a11; A12 = a12; A22 = a22; B1 = b1; B2 = b2; C = c;
+        }
+
+        public override void SetCoefficientsFromInput()
+        {
+            A11 = InputHelper.ReadDouble("a11:");
+            A12 = InputHelper.ReadDouble("a12 (пів-коефіцієнт при xy):");
+            A22 = InputHelper.ReadDouble("a22:");
+            B1 = InputHelper.ReadDouble("b1 (коефіцієнт при x):");
+            B2 = InputHelper.ReadDouble("b2 (коефіцієнт при y):");
+            C = InputHelper.ReadDouble("c (вільний член):");
+        }
+
+        public override void Show()
+        {
+            Console.WriteLine("\n--- Загальна крива другого порядку ---");
+            Console.WriteLine($"a11 = {A11}");
+            Console.WriteLine($"a12 = {A12}");
+            Console.WriteLine($"a22 = {A22}");
+            Console.WriteLine($"b1 = {B1}");
+            Console.WriteLine($"b2 = {B2}");
+            Console.WriteLine($"c = {C}");
+            Console.WriteLine("Форма: a11 x^2 + 2 a12 x y + a22 y^2 + b1 x + b2 y + c = 0");
+        }
+
+        public override bool ContainsPoint(double x, double y)
+        {
+            double val = A11 * x * x + 2.0 * A12 * x * y + A22 * y * y + B1 * x + B2 * y + C;
+            return Math.Abs(val) <= Epsilon;
+        }
+    }
+
     class Program
     {
         static void Main(string[] args)
         {
-            int userSelect;
+            Console.WriteLine("Програма: Еліпс та загальна крива другого порядку (Conic)");
 
-            do
+            while (true)
             {
-                Console.WriteLine("Виберіть тип фігури:");
-                Console.WriteLine("0 — Рівносторонній трикутник");
-                Console.WriteLine("1 — Трикутник (1 сторона + 2 кути)");
-                Console.WriteLine("Інше — Вихід");
+                Console.WriteLine("\nОберіть тип об'єкта:");
+                Console.WriteLine("0 - Еліпс");
+                Console.WriteLine("1 - Загальна крива другого порядку");
+                Console.WriteLine("Інше - Вихід");
 
-                userSelect = Convert.ToInt32(Console.ReadLine());
-                EquilateralTriangle triangle;
+                int sel = InputHelper.ReadInt("Ваш вибір:");
+                Conic conic;
 
-                if (userSelect == 0)
+                if (sel == 0)
                 {
-                    triangle = new EquilateralTriangle();
+                    conic = new Ellipse();
                 }
-                else if (userSelect == 1)
+                else if (sel == 1)
                 {
-                    triangle = new Triangle();
+                    conic = new GeneralConic();
                 }
                 else
                 {
                     return;
                 }
 
-                triangle.Init();
-                triangle.Calculate();
-                triangle.Show();
+                // Введення коефіцієнтів
+                conic.SetCoefficientsFromInput();
 
-            } while (true);
+                // Показати
+                conic.Show();
+
+                // Перевірка точки на належність
+                Console.WriteLine("\nПеревірити належність точки кривій? (1 - так, 0 - ні)");
+                int check = InputHelper.ReadInt("Ваш вибір:");
+                if (check == 1)
+                {
+                    double x = InputHelper.ReadDouble("Введіть x:");
+                    double y = InputHelper.ReadDouble("Введіть y:");
+                    bool belongs = conic.ContainsPoint(x, y);
+                    Console.WriteLine(belongs ? "Точка належить кривій (в межах точності)." : "Точка НЕ належить кривій.");
+                }
+
+                // Повернутися в цикл
+            }
         }
     }
 }
